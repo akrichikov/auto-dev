@@ -24,6 +24,7 @@ import com.intellij.psi.TokenType;
 
 %s YYUSED
 %s AGENT_BLOCK
+%s AGENT_VALUE_BLOCK
 %s VARIABLE_BLOCK
 %s COMMAND_BLOCK
 
@@ -35,11 +36,14 @@ IDENTIFIER=[a-zA-Z0-9][_\-a-zA-Z0-9]*
 VARIABLE_ID=[a-zA-Z0-9][_\-a-zA-Z0-9]*
 AGENT_ID=[a-zA-Z0-9][_\-a-zA-Z0-9]*
 COMMAND_ID=[a-zA-Z0-9][_\-a-zA-Z0-9]*
-LANGUAGE_ID=[a-zA-Z0-9][_\-a-zA-Z0-9]*
+LANGUAGE_ID=[a-zA-Z0-9][_\-a-zA-Z0-9 .]*
 
 TEXT_SEGMENT=[^$/@\n]+
+PROPERTY_VALUE=[^:\ \t\r\n]*
 CODE_CONTENT=[^\n]+
 NEWLINE= \n | \r | \r\n
+
+COLON=:
 
 %{
     private boolean isCodeStart = false;
@@ -95,9 +99,9 @@ NEWLINE= \n | \r | \r\n
 
 %%
 <YYINITIAL> {
-  {CODE_CONTENT}       { return content(); }
-  {NEWLINE}            { return NEWLINE;  }
-  [^]                  { return TokenType.BAD_CHARACTER; }
+  {CODE_CONTENT}          { return content(); }
+  {NEWLINE}               { return NEWLINE;  }
+  [^]                     { return TokenType.BAD_CHARACTER; }
 }
 
 <YYUSED> {
@@ -109,12 +113,20 @@ NEWLINE= \n | \r | \r\n
 
   {NEWLINE}               { return NEWLINE; }
   {TEXT_SEGMENT}          { return TEXT_SEGMENT; }
-  [^]                     {  }
+  [^]                     { return TokenType.BAD_CHARACTER; }
 }
 
 <AGENT_BLOCK> {
-  {IDENTIFIER}         { yybegin(YYINITIAL); return AGENT_ID; }
-  [^]                  { return TokenType.BAD_CHARACTER; }
+  {AGENT_ID}              { return AGENT_ID; }
+  {COLON}                 { yybegin(AGENT_VALUE_BLOCK); return COLON; }
+  " "                     { yypushback(1); yybegin(YYINITIAL); }
+  [^]                     { yypushback(1); yybegin(YYINITIAL); }
+}
+
+<AGENT_VALUE_BLOCK> {
+  {PROPERTY_VALUE}        { return PROPERTY_VALUE; }
+  " "                     { yypushback(1); yybegin(YYINITIAL); }
+  [^]                     { yypushback(1); yybegin(YYINITIAL); }
 }
 
 <COMMAND_BLOCK> {

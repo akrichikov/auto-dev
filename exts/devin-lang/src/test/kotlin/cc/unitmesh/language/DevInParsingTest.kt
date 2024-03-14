@@ -27,4 +27,12 @@ class DevInParsingTest : ParsingTestCase("parser", "devin", DevInParserDefinitio
     fun testBlockStartOnly() {
         doTest(true)
     }
+
+    fun testComplexLangId() {
+        doTest(true)
+    }
+
+    fun testAutoCommand() {
+        doTest(true)
+    }
 }
